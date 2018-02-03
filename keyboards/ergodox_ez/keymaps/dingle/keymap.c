@@ -23,7 +23,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * |        |   Z  |   X  |   C  |   V  |   B  |      |           |      |   N  |   M  |   ,  |   .  |  /   |        |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   |      |      |      |      | L1/- |                                       | L2/= |      |      |      |      |
+ *   |      |      |      |   -  | L1   |                                       | L2   |   =  |      |      |      |
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
  *                                        |      |      |       |      |      |
@@ -41,7 +41,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,        KC_Q,         KC_W,   KC_E,   KC_R,   KC_T,   KC_TRNS,
       KC_BSPC,        SFT_T(KC_A),  CTL_T(KC_S),   ALT_T(KC_D),   GUI_T(KC_F),   KC_G,
         KC_TRNS,        KC_Z,  KC_X,   KC_C,   KC_V,   KC_B,   KC_TRNS,
-        KC_TRNS,KC_TRNS,      KC_TRNS,  KC_TRNS, LT(NUM, KC_MINS),
+        KC_TRNS,KC_TRNS,      KC_TRNS,  KC_MINS, MO(NUM),
                                               KC_TRNS,  KC_TRNS,
                                                               KC_TRNS,
                                                KC_SPC,KC_TRNS,KC_TRNS,
@@ -49,8 +49,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
              KC_TRNS,     KC_TRNS,   KC_TRNS,   KC_TRNS,   KC_TRNS,   KC_TRNS,             KC_TRNS,
              KC_TRNS,  KC_Y,   KC_U,   KC_I,   KC_O,   KC_P,             KC_BSLS,
                           KC_H,   GUI_T(KC_J),   ALT_T(KC_K),   CTL_T(KC_L),   SFT_T(KC_SCLN),KC_QUOT,
-             KC_TRNS,KC_N,   KC_M,   KC_COMM,KC_DOT, KC_TRNS,   KC_TRNS,
-                                  LT(SYMB, KC_EQL),  KC_TRNS,KC_TRNS,KC_TRNS,          KC_TRNS,
+             KC_TRNS,KC_N,   KC_M,   KC_COMM,KC_DOT, KC_SLSH,   KC_TRNS,
+                                  MO(SYMB),  KC_EQL,KC_TRNS,KC_TRNS,          KC_TRNS,
              KC_TRNS,        KC_TRNS,
              KC_TRNS,
              KC_TRNS,KC_TAB, KC_ENT
