@@ -1,15 +1,20 @@
 #include QMK_KEYBOARD_H
 #include "debug.h"
 #include "action_layer.h"
-#include "sendchar.h"
-#include "virtser.h"
-#include "config.h"
+#include "version.h"
 
 #define BASE 0 // default layer
 #define NUM 1 // numbers
 #define SYMB 2 // symbols
-#define TXBOLT 3 // TxBolt Steno Virtual Serial
-#define TXBOLT2 4 // TxBolt Steno Virtual Serial Alternative Layout
+#define MOUSE 3 // mouse
+#define NAV 4 // navigation
+
+enum custom_keycodes {
+  PLACEHOLDER = SAFE_RANGE, // can always be here
+  EPRM,
+  VRSN,
+  RGB_SLD
+};
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /* Keymap 0: Basic layer
@@ -21,9 +26,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * | BkSp   |   A  |   S  |   D  |   F  |   G  |------|           |------|   H  |   J  |   K  |   L  |   ;  |   '    |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |        |   Z  |   X  |   C  |   V  |   B  |      |           |      |   N  |   M  |   ,  |   .  |  /   |        |
+ * |   -    |   Z  |   X  |   C  |   V  |   B  |      |           |      |   N  |   M  |   ,  |   .  |  /   |   =    |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   |      |      |      |   -  | L1   |                                       | L2   |   =  |      |      |      |
+ *   |      |      |      | NAV  | L1   |                                       | L2   |      |      |      | MOUSE|
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
  *                                        |      |      |       |      |      |
@@ -35,13 +40,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 // If it accepts an argument (i.e, is a function), it doesn't need KC_.
 // Otherwise, it needs KC_*
-[BASE] = KEYMAP(  // layer 0 : default
+[BASE] = LAYOUT_ergodox(  // layer 0 : default
         // left hand
         KC_TRNS,         KC_TRNS,         KC_TRNS,   KC_TRNS,   KC_TRNS,   KC_TRNS,   KC_TRNS,
         KC_TAB,        KC_Q,         KC_W,   KC_E,   KC_R,   KC_T,   KC_TRNS,
       KC_BSPC,        SFT_T(KC_A),  CTL_T(KC_S),   ALT_T(KC_D),   GUI_T(KC_F),   KC_G,
-        KC_TRNS,        KC_Z,  KC_X,   KC_C,   KC_V,   KC_B,   KC_TRNS,
-        KC_TRNS,KC_TRNS,      KC_TRNS,  KC_MINS, MO(NUM),
+        KC_MINS,        KC_Z,  KC_X,   KC_C,   KC_V,   KC_B,   KC_TRNS,
+        KC_TRNS,KC_TRNS,      KC_TRNS,  MO(NAV), MO(NUM),
                                               KC_TRNS,  KC_TRNS,
                                                               KC_TRNS,
                                                KC_SPC,KC_TRNS,KC_TRNS,
@@ -49,8 +54,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
              KC_TRNS,     KC_TRNS,   KC_TRNS,   KC_TRNS,   KC_TRNS,   KC_TRNS,             KC_TRNS,
              KC_TRNS,  KC_Y,   KC_U,   KC_I,   KC_O,   KC_P,             KC_BSLS,
                           KC_H,   GUI_T(KC_J),   ALT_T(KC_K),   CTL_T(KC_L),   SFT_T(KC_SCLN),KC_QUOT,
-             KC_TRNS,KC_N,   KC_M,   KC_COMM,KC_DOT, KC_SLSH,   KC_TRNS,
-                                  MO(SYMB),  KC_EQL,KC_TRNS,KC_TRNS,          KC_TRNS,
+             KC_TRNS,KC_N,   KC_M,   KC_COMM,KC_DOT, KC_SLSH,   KC_EQL,
+                                  MO(SYMB),  KC_TRNS,KC_TRNS,KC_TRNS,          TG(MOUSE),
              KC_TRNS,        KC_TRNS,
              KC_TRNS,
              KC_TRNS,KC_TAB, KC_ENT
@@ -61,7 +66,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,--------------------------------------------------.           ,--------------------------------------------------.
  * |Version |  F1  |  F2  |  F3  |  F4  |  F5  |      |           |      |  F6  |  F7  |  F8  |  F9  |  F10 |   F11  |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * |        |sleep |      |      | caps |txbolt|      |           |      |   0  |   1  |   2  |   3  |   *  |   F12  |
+ * |        |sleep | menu | app  | caps |      |      |           |      |   0  |   1  |   2  |   3  |   *  |   F12  |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * |        |SHIFT | ctrl | alt  | gui  |      |------|           |------|   -  |   4  |   5  |   6  |   =  |        |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
@@ -78,10 +83,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 `--------------------'       `--------------------'
  */
 // NUM
-[NUM] = KEYMAP(
+[NUM] = LAYOUT_ergodox(
        // left hand
        KC_TRNS,   KC_F1,  KC_F2,  KC_F3,  KC_F4,  KC_F5,  KC_TRNS,
-       KC_TRNS,KC_SLEP,KC_TRNS,  KC_TRNS,KC_CAPS,TG(TXBOLT),KC_TRNS,
+       KC_TRNS,KC_SLEP,KC_MENU,  KC_APP,KC_CAPS,KC_TRNS,KC_TRNS,
        KC_TRNS,KC_LSFT,KC_LCTL, KC_LALT,KC_LGUI,KC_TRNS,
        KC_TRNS,KC_TRNS,KC_TRNS,KC_TRNS,KC_TRNS,KC_TRNS,KC_TRNS,
        KC_TRNS,KC_TRNS,KC_TRNS,KC_TRNS,KC_TRNS,
@@ -99,12 +104,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        KC_TRNS, KC_TRNS, KC_TRNS
 ),
 
-/* Keymap 1: Symbol Layer
+/* Keymap 2: Symbol Layer
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
  * |Version |  F1  |  F2  |  F3  |  F4  |  F5  |      |           |      |  F6  |  F7  |  F8  |  F9  |  F10 |   F11  |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * |        |   !  |   @  |   {  |   }  |   &  |      |           |      |      |      |      |      | powr |   F12  |
+ * |        |   !  |   @  |   {  |   }  |   &  |      |           |      | mute | VolDN|VolUP |sysreq| powr |   F12  |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * |        |   #  |   $  |   (  |   )  |   *  |------|           |------|      | gui  | alt  | ctl  |shift |        |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
@@ -121,7 +126,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 `--------------------'       `--------------------'
  */
 // SYMBOLS 2
-[SYMB] = KEYMAP(
+[SYMB] = LAYOUT_ergodox(
        // left hand
        M(0),   KC_F1,  KC_F2,  KC_F3,  KC_F4,  KC_F5,  KC_TRNS,
        KC_TRNS,KC_EXLM,KC_AT,  KC_LCBR,KC_RCBR,KC_AMPR,KC_TRNS,
@@ -133,7 +138,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                KC_TRNS,KC_TRNS,KC_TRNS,
        // right hand
        KC_TRNS, KC_F6,   KC_F7,  KC_F8,   KC_F9,   KC_F10,  KC_F11,
-       KC_TRNS, KC_TRNS,   KC_TRNS,   KC_TRNS,    KC_TRNS,    KC_PWR, KC_F12,
+       KC_TRNS, KC__MUTE,   KC__VOLUP,   KC__VOLDOWN,    KC_SYSREQ,    KC_PWR, KC_F12,
        KC_TRNS, KC_LGUI, KC_LALT,   KC_LCTL,    KC_LSFT, KC_TRNS,
        KC_TRNS, KC_TRNS, KC_TRNS,   KC_TRNS,    KC_TRNS,    KC_TRNS, KC_TRNS,
                          KC_TRNS,KC_TRNS,  KC_TRNS,    KC_TRNS,  KC_TRNS,
@@ -142,88 +147,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
        KC_TRNS, KC_TRNS, KC_TRNS
 ),
 
-// TxBolt Codes
-#define Sl 0b00000001
-#define Tl 0b00000010
-#define Kl 0b00000100
-#define Pl 0b00001000
-#define Wl 0b00010000
-#define Hl 0b00100000
-#define Rl 0b01000001
-#define Al 0b01000010
-#define Ol 0b01000100
-#define X  0b01001000
-#define Er 0b01010000
-#define Ur 0b01100000
-#define Fr 0b10000001
-#define Rr 0b10000010
-#define Pr 0b10000100
-#define Br 0b10001000
-#define Lr 0b10010000
-#define Gr 0b10100000
-#define Tr 0b11000001
-#define Sr 0b11000010
-#define Dr 0b11000100
-#define Zr 0b11001000
-#define NM 0b11010000
-#define GRPMASK 0b11000000
-#define GRP0 0b00000000
-#define GRP1 0b01000000
-#define GRP2 0b10000000
-#define GRP3 0b11000000
-/* Keymap 3: TxBolt (Serial)
+/* Keymap 3: mouse
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
- * | BKSPC  |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
- * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * |        |   #  |   #  |   #  |   #  |   #  |      |           |      |   #  |   #  |   #  |   #  |   #  |   #    |
- * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |        |   S  |   T  |   P  |   H  |   *  |------|           |------|   *  |   F  |   P  |   L  |   T  |   D    |
- * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |        |   S  |   K  |   W  |   R  |   *  |      |           |      |   *  |   R  |   B  |   G  |   S  |   Z    |
- * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   | BASE |      |      |      |      |                                       |      |      |      |      | BASE |
- *   `----------------------------------'                                       `----------------------------------'
- *                                        ,-------------.       ,-------------.
- *                                        |      |      |       |      |      |
- *                                 ,------|------|------|       |------+------+------.
- *                                 |      |      |      |       |      |      |      |
- *                                 |   A  |   O  |------|       |------|   E  |   U  |
- *                                 |      |      |      |       |      |      |      |
- *                                 `--------------------'       `--------------------'
- */
-// TxBolt over Serial
-[TXBOLT] = KEYMAP(
-       KC_BSPC, KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,  
-       KC_NO,   M(NM),   M(NM),   M(NM),   M(NM),   M(NM),  KC_NO,  
-       KC_NO,   M(Sl),   M(Tl),   M(Pl),   M(Hl),   M(X),
-       KC_NO,   M(Sl),   M(Kl),   M(Wl),   M(Rl),   M(X),   KC_NO,
-       TO(BASE),   KC_NO,   KC_NO,   KC_NO,   KC_NO,
-                                           KC_NO,   KC_NO,  
-                                                    KC_NO,  
-                                  M(Al),   M(Ol),   KC_NO,  
-    // right hand
-       KC_NO,    KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,  
-       KC_TRNS,  M(NM),   M(NM),   M(NM),   M(NM),   M(NM),   M(NM),
-                 M(X),    M(Fr),   M(Pr),   M(Lr),   M(Tr),   M(Dr),
-       KC_NO,    M(X),    M(Rr),   M(Br),   M(Gr),   M(Sr),   M(Zr),
-                          KC_NO,   KC_NO,   KC_NO,   KC_NO,   TO(BASE),  
-       KC_NO,   KC_NO,  
-       KC_NO,  
-       KC_NO,   M(Er),   M(Ur)
-),
-/* Keymap 4: TxBolt (Serial) Alternative
- *
- * ,--------------------------------------------------.           ,--------------------------------------------------.
- * |        |   #  |   #  |   #  |   #  |   #  |      |           |      |   #  |   #  |   #  |   #  |   #  |   #    |
- * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * |        |   S  |   T  |   P  |   H  |   *  |      |           |      |   *  |   F  |   P  |   L  |   T  |   D    |
- * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |        |   S  |   K  |   W  |   R  |   *  |------|           |------|   *  |   R  |   B  |   G  |   S  |   Z    |
- * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      |scrlUp|lclick|  up  |rclick|      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |------|           |------|scrlDn| left |down  | right|      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      |      | scrlL|scrlR |      |      |        |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   | BASE |      |      |   A  |   O  |                                       |   E  |   U  |      |      | BASE |
+ *   |      |      |      |      | to 0 |                                       | to 0 |      |      |      |//////|
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
  *                                        |      |      |       |      |      |
@@ -233,97 +168,200 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 |      |      |      |       |      |      |      |
  *                                 `--------------------'       `--------------------'
  */
-// TxBolt over Serial
-[TXBOLT2] = KEYMAP(
-       KC_NO,   M(NM),   M(NM),   M(NM),   M(NM),   M(NM),  KC_NO,  
-       KC_NO,   M(Sl),   M(Tl),   M(Pl),   M(Hl),   M(X),   KC_NO,  
-       KC_NO,   M(Sl),   M(Kl),   M(Wl),   M(Rl),   M(X),
-       KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,  
-       TO(BASE),   KC_NO,   KC_NO,   M(Al),   M(Ol),
-                                           KC_NO,   KC_NO,  
-                                                    KC_NO,  
-                                  KC_NO,   KC_NO,   KC_NO,  
+// MOUSE
+[MOUSE] = LAYOUT_ergodox(
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, TO(BASE),
+                                           KC_TRNS, KC_TRNS,
+                                                    KC_TRNS,
+                                  KC_TRNS, KC_TRNS, KC_TRNS,
     // right hand
-       KC_NO,    M(NM),   M(NM),   M(NM),   M(NM),   M(NM),   M(NM),
-       KC_TRNS,  M(X),    M(Fr),   M(Pr),   M(Lr),   M(Tr),   M(Dr),
-                 M(X),    M(Rr),   M(Br),   M(Gr),   M(Sr),   M(Zr),
-       KC_NO,    KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,   KC_NO,  
-                          M(Er),   M(Ur),   KC_NO,   KC_NO,   TO(BASE),  
-       KC_NO,   KC_NO,  
-       KC_NO,  
-       KC_NO,   KC_NO,   KC_NO
+       KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS,  KC_MS_WH_DOWN, KC_BTN1, KC_MS_U, KC_BTN2, KC_TRNS, KC_TRNS,
+                 KC_MS_WH_UP, KC_MS_L, KC_MS_D, KC_MS_R, KC_TRNS, KC_TRNS,
+       KC_TRNS,  KC_TRNS, KC_MS_WH_RIGHT, KC_MS_WH_LEFT, KC_TRNS, KC_TRNS, KC_TRNS,
+                          TO(BASE), KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS,
+       KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS
 ),
+
+/* Keymap 4: nav
+ *
+ * ,--------------------------------------------------.           ,--------------------------------------------------.
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      | pgup | home |  up  | end  |      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |------|           |------| pgdn | left |down  | right|      |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |      |      |      |      |      |      |           |      |      |      |      |      |      |        |
+ * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
+ *   |      |      |      |//////|      |                                       |      |      |      |      |      |
+ *   `----------------------------------'                                       `----------------------------------'
+ *                                        ,-------------.       ,-------------.
+ *                                        |      |      |       |      |      |
+ *                                 ,------|------|------|       |------+------+------.
+ *                                 |      |      |      |       |      |      |      |
+ *                                 |      |      |------|       |------|      |      |
+ *                                 |      |      |      |       |      |      |      |
+ *                                 `--------------------'       `--------------------'
+ */
+// NAV
+[NAV] = LAYOUT_ergodox(
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_MS_U, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, TO(BASE),
+                                           KC_TRNS, KC_TRNS,
+                                                    KC_TRNS,
+                                  KC_TRNS, KC_TRNS, KC_TRNS,
+    // right hand
+       KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS,  KC_PGUP, KC_HOME, KC_UP, KC_END, KC_TRNS, KC_TRNS,
+                 KC_PGDOWN, KC_LEFT, KC_DOWN, KC_RIGHT, KC_TRNS, KC_TRNS,
+       KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+                          KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
+       KC_TRNS, KC_TRNS,
+       KC_TRNS,
+       KC_TRNS, KC_TRNS, KC_TRNS
+),
+
 };
 
 const uint16_t PROGMEM fn_actions[] = {
     [1] = ACTION_LAYER_TAP_TOGGLE(SYMB)                // FN1 - Momentary Layer 1 (Symbols)
 };
 
-uint8_t chord[4] = {0,0,0,0};
-uint8_t pressed_count = 0;
-
-void send_chord(void)
-{
-  for(uint8_t i = 0; i < 4; i++)
-  {
-    if(chord[i])
-      virtser_send(chord[i]);
-  }
-  virtser_send(0);
-}
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record)
-{
-  // We need to track keypresses in all modes, in case the user
-  // changes mode whilst pressing other keys.
-  if (record->event.pressed)
-    pressed_count++;
-  else
-    pressed_count--;
-  return true;
-}
-
 const macro_t *action_get_macro(keyrecord_t *record, uint8_t id, uint8_t opt)
 {
   // MACRODOWN only works in this function
-
-  if (record->event.pressed) {
-    uint8_t grp = (id & GRPMASK) >> 6;
-    chord[grp] |= id;
-  }
-  else {
-    if (pressed_count == 0) {
-      send_chord();
-      chord[0] = chord[1] = chord[2] = chord[3] = 0;
-    }
+  switch(id) {
+    case 0:
+      if (record->event.pressed) {
+        SEND_STRING (QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION);
+      }
+      break;
+    case 1:
+      if (record->event.pressed) { // For resetting EEPROM
+        eeconfig_init();
+      }
+      break;
   }
   return MACRO_NONE;
 };
 
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+    // dynamically generate these.
+    case EPRM:
+      if (record->event.pressed) {
+        eeconfig_init();
+      }
+      return false;
+      break;
+    case VRSN:
+      if (record->event.pressed) {
+        SEND_STRING (QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION);
+      }
+      return false;
+      break;
+    case RGB_SLD:
+      if (record->event.pressed) {
+        #ifdef RGBLIGHT_ENABLE
+          rgblight_mode(1);
+        #endif
+      }
+      return false;
+      break;
+  }
+  return true;
+}
+
 // Runs just one time when the keyboard initializes.
 void matrix_init_user(void) {
+#ifdef RGBLIGHT_COLOR_LAYER_0
+  rgblight_setrgb(RGBLIGHT_COLOR_LAYER_0);
+#endif
 };
 
 // Runs constantly in the background, in a loop.
 void matrix_scan_user(void) {
 
-    uint8_t layer = biton32(layer_state);
+};
 
-    ergodox_board_led_off();
-    ergodox_right_led_1_off();
-    ergodox_right_led_2_off();
-    ergodox_right_led_3_off();
-    switch (layer) {
-      // TODO: Make this relevant to the ErgoDox EZ.
-        case 1:
-            ergodox_right_led_1_on();
-            break;
-        case 2:
-            ergodox_right_led_2_on();
-            break;
-        default:
-            // none
-            break;
+// Runs whenever there is a layer state change.
+uint32_t layer_state_set_user(uint32_t state) {
+  ergodox_board_led_off();
+  ergodox_right_led_1_off();
+  ergodox_right_led_2_off();
+  ergodox_right_led_3_off();
+
+  uint8_t layer = biton32(state);
+  switch (layer) {
+      case 0:
+        #ifdef RGBLIGHT_COLOR_LAYER_0
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_0);
+        #else
+        #ifdef RGBLIGHT_ENABLE
+          rgblight_init();
+        #endif
+        #endif
+        break;
+      case 1:
+        ergodox_right_led_1_on();
+        #ifdef RGBLIGHT_COLOR_LAYER_1
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_1);
+        #endif
+        break;
+      case 2:
+        ergodox_right_led_2_on();
+        #ifdef RGBLIGHT_COLOR_LAYER_2
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_2);
+        #endif
+        break;
+      case 3:
+        ergodox_right_led_3_on();
+        #ifdef RGBLIGHT_COLOR_LAYER_3
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_3);
+        #endif
+        break;
+      case 4:
+        ergodox_right_led_1_on();
+        ergodox_right_led_2_on();
+        #ifdef RGBLIGHT_COLOR_LAYER_4
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_4);
+        #endif
+        break;
+      case 5:
+        ergodox_right_led_1_on();
+        ergodox_right_led_3_on();
+        #ifdef RGBLIGHT_COLOR_LAYER_5
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_5);
+        #endif
+        break;
+      case 6:
+        ergodox_right_led_2_on();
+        ergodox_right_led_3_on();
+        #ifdef RGBLIGHT_COLOR_LAYER_6
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_6);
+        #endif
+        break;
+      case 7:
+        ergodox_right_led_1_on();
+        ergodox_right_led_2_on();
+        ergodox_right_led_3_on();
+        #ifdef RGBLIGHT_COLOR_LAYER_7
+          rgblight_setrgb(RGBLIGHT_COLOR_LAYER_6);
+        #endif
+        break;
+      default:
+        break;
     }
 
+  return state;
 };
